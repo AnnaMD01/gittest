@@ -1,14 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <conio.h>
-#include<string.h>
 #include<signal.h>
-#include<stdbool.h>
 #include<pthread.h>
-#define show_var(a) { printf("Variable %s has value %d\n", #a, a); }
-//  #include<windows.h>  -- scriere citire fisiere
-/* run this program using the console pauser or add your own getch, system("pause") or input loop */
+#define _XOPEN_SOURCE 600
 
+
+pthread_barrier_t barrier;
+int v[]={0,1,2};
  struct list{
 	int val;
 	struct list * next;
@@ -24,9 +22,11 @@ void add_first(int data)
 	nod->next=head; // nod->next=NULL;
 	head=nod;
 }
-
-void add_last(int data)
-{
+// add a node at the end of the list
+void add_node(int data)
+{  
+   printf("ADD %d\n",pthread_self() );
+   
   struct list* node =(struct list*) malloc(sizeof(struct list));
   node->val = data;
   node->next = NULL;
@@ -35,34 +35,55 @@ void add_last(int data)
   if(head == NULL) // if the list is empty 
   	{  head = node;
 	  }
-  else {   struct list* temp = head;
-
+  else {   struct list* temp = head; // e ca un fel de pointer cu care iterez
+            // parcurg lista nod cu nod
             while(temp->next != NULL) {
 			temp=temp->next; } 
-		   if(temp->next==NULL ) temp->next=node;
-      free(temp); } 
-         }
+		    temp->next=node;
+       } 
+      
+      
+         // afisez liswta pe masura ce includ noduri in ea
+  //  struct list* temp = head;
+	//while(temp != NULL) {  printf("%d ",temp->val);
+	  //                       temp  = temp->next; } 
+	     //         printf("\n"); 
+	
+         } 
+         
+               
+         
 
-void print()
-{
+void print_list()
+{    
+ printf("PRINT LIST %d\n",pthread_self() );
+
 	struct list* temp = head;
+	if(head!=NULL){
 	while(temp != NULL) {  printf("%d ",temp->val);
 	                           temp  = temp->next; } 
-	              printf("\n");             
+	              printf("\n");   }
+	else printf("Nothing to show. The list is empty!\n");			            
 }
 
 
-void delete()
-{
+void flush_list()
+{     printf("FLUSH LIST %d\n",pthread_self() );
+
+	
+	while(head!=NULL) { 
 	struct list *temp;
-	while(head!=NULL) {  temp=head;
+	 temp=head;
 	 head=head->next;
 	 free(temp);
-	}  head = NULL;
+	}  
 }
 	
 void delete_node(int valoare)
-{  // printf("\nIn function\n");
+{  
+   printf("DELETE NODE %d\n",pthread_self() );
+
+
 	 // daca lista e goala
 	if(head == NULL) printf("List is empty, we have nothing to erase!");
 	// daca lista are doar un element
@@ -86,7 +107,10 @@ void delete_node(int valoare)
 // lower to the higher value of the list
 //schimbarea referintelor
 void sort_list()
-{ 
+{  
+
+   printf("SORT LIST %d\n",pthread_self() );
+
   /*struct list * p = head; //aici e pb
   struct list * c = p->next; 
   struct list * u = c->next;
@@ -113,10 +137,11 @@ void sort_list()
   int swap = 1;  // un fel de variabila booleana
   while (swap!=0){
   swap=0;
-  
+  struct list *p= head;
+  struct list *c= p->next;
   while( p->next!=NULL  ) // daca nu am doar un singur nod
   { 
-  	if( p->val >   c->val ) {      int temp = p->val;
+  	if( p->val >   c->val ) {      int temp = p->val; // se paote si fara variabila intermediara
   	                               p->val = c->val;
   	                               c->val = temp;
 								   swap=1; } 
@@ -125,56 +150,102 @@ void sort_list()
    }  }
 }
 
+void* sinc (void* arg)
+{
+	
+   int *vect = (int*) arg;
+ //  printf("%d %d %d\n", vect[0],vect[1],vect[2]);  e ok
+ 
+	// firele asteapta la bariera 
+	int ultim = pthread_barrier_wait(&barrier);
+	if(ultim == PTHREAD_BARRIER_SERIAL_THREAD) 
+	{  printf("This is the last thread!\n");
+	} 
+	
+	
+	
+	
+ 	if(vect[0]==0) {   add_node(2);
+                        add_node(4);
+                        add_node(10);
+                        delete_node(2);
+                        sort_list();
+                        delete_node(10);
+                        delete_node(5);
+            }
+   	else if(vect[1]==1){      add_node(11);
+                        add_node(1);
+                        delete_node(11);
+                        add_node(8);
+                        print_list();
+                 }
+   	       else if(vect[2]==2) { add_node(30);
+                        add_node(25);
+                        add_node(100);
+                        sort_list();
+                        print_list();
+                        delete_node(100);
+                          } 
+   
+    
+	   
+	   
+	   
+	           //   return NULL;        
+}
+
 int main(int argc, char *argv[], char** environ) {
 	
 	
-
-add_first(7);
-add_first(2);
-add_first(5);
-add_first(1);
-add_first(8);
-print();
-//printf("%d\n",head->val);
-//printf("%d\n",head->next->val);
+//WORKS WELL
+//add_first(7);
+//add_first(2);
+//add_first(5);
+//add_first(1);
+//add_first(8);
+//print();
 //delete_node(5);
 //print(); 
-sort_list();
-print();
-delete();
-
-
-// o pb pe alocarea add_last
-
-//if(head==NULL) printf("ok\n");
-//add_last(1);
-//add_last(2);
-//add_last(3);
-//add_last(4);
-//add_last(5);
-//printf("main after add_last\n");
-//printf("%d %d\n",head->val,head->next->val);
+//sort_list();
 //print();
-//printf("main after print method\n");
 //delete();
-//printf("main after delete method\n");
-// infinte loop
+
+
+// WORKS WELL
+//add_last(8);
+//add_last(1);
+//add_last(5);
+//add_last(2);
+//add_last(7);
+//print();
+//delete_node(5);
+//print();
+//sort_list();
+//print();
+//delete();
+//print();
+
+
+pthread_t threads[3];
+int i;
+
+pthread_barrier_init(&barrier, NULL, 3);
+for(i=0;i<3;i++)
+{
+	pthread_create(&threads[i], NULL, sinc, (void*)v);
+}
+
+  
+for(i=0;i<3;i++)
+{ pthread_join(threads[i], NULL);
+}
+
+pthread_barrier_destroy(&barrier);
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+print_list();
+flush_list();
 
 	return 0;
 }
