@@ -6,7 +6,7 @@
 
 
 pthread_barrier_t barrier;
-int v[]={0,1,2};
+
 struct list{
 	int val;
 	struct list * next;
@@ -51,8 +51,9 @@ void print_list()
 
 	struct list* temp = head;
 	if(head!=NULL) {
-	        while(temp != NULL) {  
-			          printf("%d ",temp->val);
+	        while(temp != NULL) { 
+			          //printf("%d ", temp->val);    
+			          print(temp);
 	                  temp  = temp->next; 
 					            } 
 	        printf("\n");   
@@ -61,6 +62,11 @@ void print_list()
 	        printf("Nothing to show. The list is empty!\n");			            
 }
 
+void print (struct list* node)
+{
+	printf("%d ", node->val);	
+	
+}
 
 void flush_list()
 {     
@@ -135,8 +141,9 @@ void sort_list()
 
 
 void* sinc (void* arg)
-{
-	int *vect = (int*) arg;
+{ 
+	int i = (int)arg;
+   //	printf("\nValoarea lui 1 este %d\n ", i);	
 
     // thread-urile asteapta la bariera
     int ultim = pthread_barrier_wait(&barrier);
@@ -145,7 +152,7 @@ void* sinc (void* arg)
 	    printf("This is the last thread!\n");
 	} 
 	
- 	if(vect[0]==0) {    
+ 	if(i==0) {    
 	    add_node(2);
         add_node(4);
         add_node(10);
@@ -155,7 +162,7 @@ void* sinc (void* arg)
         delete_node(5);
 }
    	else 
-	    if(vect[1]==1) {      
+	    if(i==1) {      
 		    add_node(11);
             add_node(1);
             delete_node(11);
@@ -163,7 +170,7 @@ void* sinc (void* arg)
             print_list();
 }
    	    else 
-		    if(vect[2]==2) { 
+		    { 
 			    add_node(30);
                 add_node(25);
                 add_node(100);
@@ -190,6 +197,8 @@ int main(int argc, char *argv[], char** environ) {
    //delete();
 
 
+
+
    // WORKS WELL
    //add_last(8);
    //add_last(1);
@@ -209,10 +218,10 @@ int main(int argc, char *argv[], char** environ) {
    pthread_t threads[3];
    int i;
    pthread_barrier_init(&barrier, NULL, 3);
-
+   
    for(i=0;i<3;i++)
 {
-	   pthread_create(&threads[i], NULL, sinc, (void*)v);
+	   pthread_create(&threads[i], NULL, sinc,(void*)i );
 }
 
   
