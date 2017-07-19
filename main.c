@@ -4,15 +4,20 @@
 #include <pthread.h>
 #define _XOPEN_SOURCE 600
 
-
 pthread_barrier_t barrier;
 
 struct list{
 	int val;
 	struct list * next;
+	void (*pf)(int);
 };
 struct list *head = NULL;
 
+
+void function(int val)
+{   
+	printf("%d ",val);
+}
 
 void add_first(int data){
 	 struct list *nod =(struct list*) malloc(sizeof(struct list));
@@ -28,7 +33,8 @@ void add_node(int data)
    struct list* node =(struct list*) malloc(sizeof(struct list));
    node->val = data;
    node->next = NULL;
-
+   node->pf = &function;
+   	
    // if the list is empty
    if(head == NULL)  
    {  
@@ -52,9 +58,9 @@ void print_list()
 	struct list* temp = head;
 	if(head!=NULL) {
 	        while(temp != NULL) { 
-			          //printf("%d ", temp->val);    
-			          print(temp);
-	                  temp  = temp->next; 
+			          //printf("%d ", temp->val); 
+                      temp->pf(temp->val); 
+					  temp  = temp->next; 
 					            } 
 	        printf("\n");   
 			      }
@@ -200,18 +206,18 @@ int main(int argc, char *argv[], char** environ) {
 
 
    // WORKS WELL
-   //add_last(8);
-   //add_last(1);
-   //add_last(5);
-   //add_last(2);
-   //add_last(7);
-   //print();
+   //add_node(8);
+   //add_node(1);
+   //add_node(5);
+   //add_node(2);
+   //add_node(7);
+   //print_list();
    //delete_node(5);
-   //print();
+   //print_list();
    //sort_list();
-   //print();
-   //delete();
-   //print();
+   //print_list();
+   //flush_list();
+   //print_list();
 
    printf("The id of the main thread is %d\n",pthread_self());
 
@@ -236,6 +242,8 @@ pthread_barrier_destroy(&barrier);
 
    print_list();
    flush_list();
+   
 
+ 
 	return 0;
 }
