@@ -14,7 +14,7 @@ struct list{
 struct list *head = NULL;
 
 
-void function(int val)
+void print_node(int val)
 {   
 	printf("%d ",val);
 }
@@ -29,11 +29,11 @@ void add_first(int data){
 // add a node at the end of the list
 void add_node(int data)
 {  
-   printf("ADD %d\n",pthread_self() );
+   printf("ADD %ld\n",pthread_self() );
    struct list* node =(struct list*) malloc(sizeof(struct list));
    node->val = data;
    node->next = NULL;
-   node->pf = &function;
+   node->pf = &print_node;
    	
    // if the list is empty
    if(head == NULL)  
@@ -53,7 +53,7 @@ void add_node(int data)
                
 void print_list()
 {    
-    printf("PRINT LIST %d\n",pthread_self() );
+    printf("PRINT LIST %ld\n",pthread_self() );
 
 	struct list* temp = head;
 	if(head!=NULL) {
@@ -68,15 +68,10 @@ void print_list()
 	        printf("Nothing to show. The list is empty!\n");			            
 }
 
-void print (struct list* node)
-{
-	printf("%d ", node->val);	
-	
-}
 
 void flush_list()
 {     
-    printf("FLUSH LIST %d\n",pthread_self() );
+    printf("FLUSH LIST %ld\n",pthread_self() );
 
     while(head!=NULL) { 
 	        struct list *temp;
@@ -89,7 +84,7 @@ void flush_list()
 	
 void delete_node(int valoare)
 {  
-    printf("DELETE NODE %d\n",pthread_self() );
+    printf("DELETE NODE %ld\n",pthread_self() );
 
     if(head == NULL) 
 	         printf("List is empty, we have nothing to erase!");
@@ -122,7 +117,7 @@ void delete_node(int valoare)
 void sort_list()
 {  
 
-   printf("SORT LIST %d\n",pthread_self() );
+   printf("SORT LIST %ld\n",pthread_self() );
 
    struct list *p= head;
    struct list *c= p->next;
@@ -130,8 +125,8 @@ void sort_list()
    int swap = 1;  
    while (swap!=0){
           swap=0;
-          struct list *p= head;
-          struct list *c= p->next;
+          p= head;
+          c= p->next;
           while( p->next!=NULL  ) { 
   	             if( p->val > c->val ) {      
 				     int temp = p->val; 
@@ -148,8 +143,8 @@ void sort_list()
 
 void* sinc (void* arg)
 { 
-	int i = (int)arg;
-   //	printf("\nValoarea lui 1 este %d\n ", i);	
+	int *p = (int*)arg;
+	int i = *p;	
 
     // thread-urile asteapta la bariera
     int ultim = pthread_barrier_wait(&barrier);
@@ -158,32 +153,34 @@ void* sinc (void* arg)
 	    printf("This is the last thread!\n");
 	} 
 	
- 	if(i==0) {    
-	    add_node(2);
-        add_node(4);
-        add_node(10);
-        delete_node(2);
-        sort_list();
-        delete_node(10);
-        delete_node(5);
-}
-   	else 
-	    if(i==1) {      
-		    add_node(11);
-            add_node(1);
-            delete_node(11);
-            add_node(8);
-            print_list();
-}
-   	    else 
-		    { 
-			    add_node(30);
+ 	    switch(i){
+			case 0:
+	    		add_node(2);
+        		add_node(4);
+        		add_node(10);
+        		delete_node(2);
+        		sort_list();
+        		delete_node(10);
+        		delete_node(5);
+            	break;
+        	case 1:
+		    	add_node(11);
+            	add_node(1);
+            	delete_node(11);
+            	add_node(8);
+            	print_list();
+				break;
+   	    	case 2:
+				add_node(30);
                 add_node(25);
                 add_node(100);
                 sort_list();
                 print_list();
                 delete_node(100);
-} 
+                break;
+            default:
+				printf("Invalid number\n");    
+                 }
 }
 
 int main(int argc, char *argv[], char** environ) {
@@ -219,15 +216,16 @@ int main(int argc, char *argv[], char** environ) {
    //flush_list();
    //print_list();
 
-   printf("The id of the main thread is %d\n",pthread_self());
+   printf("The id of the main thread is %ld\n",pthread_self());
 
    pthread_t threads[3];
    int i;
    pthread_barrier_init(&barrier, NULL, 3);
    
+   int v[] = {0,1,2};
    for(i=0;i<3;i++)
 {
-	   pthread_create(&threads[i], NULL, sinc,(void*)i );
+	   pthread_create(&threads[i], NULL, sinc, &v[i] );
 }
 
   
