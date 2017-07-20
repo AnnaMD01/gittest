@@ -2,17 +2,26 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <pthread.h>
+#include <unistd.h>
+#include <sys/syscall.h>
+#include <sys/types.h>
 #define _XOPEN_SOURCE 600
 
-
 pthread_barrier_t barrier;
-int v[]={0,1,2};
+pthread_mutex_t mutex;
+
 struct list{
 	int val;
 	struct list * next;
+	void (*pf)(int);
 };
 struct list *head = NULL;
 
+
+void print_node(int val)
+{   
+	printf("%d ",val);
+}
 
 void add_first(int data){
 	 struct list *nod =(struct list*) malloc(sizeof(struct list));
@@ -24,10 +33,13 @@ void add_first(int data){
 // add a node at the end of the list
 void add_node(int data)
 {  
-   printf("ADD %d\n",pthread_self() );
+   printf("ADD %i from thread %ld\n", data, syscall(SYS_gettid));
    struct list* node =(struct list*) malloc(sizeof(struct list));
    node->val = data;
    node->next = NULL;
+   node->pf = &print_node;
+ 
+   pthread_mutex_lock(&mutex);  	
 
    // if the list is empty
    if(head == NULL)  
@@ -41,76 +53,97 @@ void add_node(int data)
 			       temp=temp->next; 
 		   } 
 		   temp->next=node;
-        } 
+        }
+
+   pthread_mutex_unlock(&mutex);
 } 
          
                
 void print_list()
 {    
-    printf("PRINT LIST %d\n",pthread_self() );
+    printf("PRINT LIST from thread %ld\n", syscall(SYS_gettid));
+
+    pthread_mutex_lock(&mutex);
 
 	struct list* temp = head;
 	if(head!=NULL) {
-	        while(temp != NULL) {  
-			          printf("%d ",temp->val);
-	                  temp  = temp->next; 
+	        while(temp != NULL) { 
+			          //printf("%d ", temp->val); 
+                      temp->pf(temp->val); 
+					  temp  = temp->next; 
 					            } 
 	        printf("\n");   
 			      }
 	else 
-	        printf("Nothing to show. The list is empty!\n");			            
+	        printf("Nothing to show. The list is empty!\n");
+
+	pthread_mutex_unlock(&mutex);
 }
 
 
 void flush_list()
 {     
-    printf("FLUSH LIST %d\n",pthread_self() );
+    printf("FLUSH LIST from thread %ld\n", syscall(SYS_gettid));
+
+    pthread_mutex_lock(&mutex);
 
     while(head!=NULL) { 
 	        struct list *temp;
 	        temp=head;
 	        head=head->next;
 	        free(temp);
-	                  }  
+	                  }
+
+	pthread_mutex_unlock(&mutex);
 }
 	
 	
 void delete_node(int valoare)
 {  
-    printf("DELETE NODE %d\n",pthread_self() );
+    printf("DELETE NODE %i from thread %ld\n", valoare, syscall(SYS_gettid));
 
-    if(head == NULL) 
-	         printf("List is empty, we have nothing to erase!");
-	else 
-	         if( head->next == NULL && head->val == valoare) 
-			         free(head);  
-	         else {   
-	                 if(head->val == valoare) { 
-					          struct list* p = head;
-			                  head = head->next; free(p); 
-}
-	struct list* predecesor = head;
-    struct list* curent = predecesor->next; 
-	         
-	while ( curent->next!=NULL && curent->val!=valoare) { 
-	         predecesor=curent;
-	         curent=curent->next; 
-}
-	if(curent->val == valoare) {  
-	         predecesor->next = curent->next;
-			 free(curent);
-}   
-	else 
-	         printf("this specific element is not in this list!\n");					                                                 
-	         	                                                            
-}	
+    pthread_mutex_lock(&mutex);
+
+    if(head == NULL)
+    	printf("List is empty, we have nothing to erase!");
+	else {
+		if(head->next == NULL && head->val == valoare)
+			free(head);
+		else {
+			if (head->val == valoare) {
+				struct list* p = head;
+				head = head->next;
+				free(p);
+			}
+			else {
+				struct list* predecesor = head;
+				struct list* curent = head->next;
+
+				while (curent != NULL && curent->val != valoare) {
+					predecesor = predecesor->next;
+					curent = curent->next;
+				}
+
+				if (curent == NULL)
+					printf("%i is not in this list!\n", valoare);
+				else {
+					predecesor->next = curent->next;
+					free(curent);
+				}
+			}
+		}
+	}
+
+	pthread_mutex_unlock(&mutex);
 }
 
 
 void sort_list()
 {  
 
-   printf("SORT LIST %d\n",pthread_self() );
+   printf("SORT LIST from thread %ld\n", syscall(SYS_gettid));
+
+   pthread_mutex_lock(&mutex);
 
    struct list *p= head;
    struct list *c= p->next;
@@ -118,8 +151,8 @@ void sort_list()
    int swap = 1;  
    while (swap!=0){
           swap=0;
-          struct list *p= head;
-          struct list *c= p->next;
+          p= head;
+          c= p->next;
           while( p->next!=NULL  ) { 
   	             if( p->val > c->val ) {      
 				     int temp = p->val; 
@@ -131,12 +164,15 @@ void sort_list()
 	      c=c->next;								 
 } 
 }
+
+	pthread_mutex_unlock(&mutex);
 }
 
 
 void* sinc (void* arg)
-{
-	int *vect = (int*) arg;
+{ 
+	int *p = (int*)arg;
+	int i = *p;
 
     // thread-urile asteapta la bariera
     int ultim = pthread_barrier_wait(&barrier);
@@ -145,32 +181,34 @@ void* sinc (void* arg)
 	    printf("This is the last thread!\n");
 	} 
 	
- 	if(vect[0]==0) {    
-	    add_node(2);
-        add_node(4);
-        add_node(10);
-        delete_node(2);
-        sort_list();
-        delete_node(10);
-        delete_node(5);
-}
-   	else 
-	    if(vect[1]==1) {      
-		    add_node(11);
-            add_node(1);
-            delete_node(11);
-            add_node(8);
-            print_list();
-}
-   	    else 
-		    if(vect[2]==2) { 
-			    add_node(30);
+ 	    switch(i){
+			case 0:
+	    		add_node(2);
+        		add_node(4);
+        		add_node(10);
+        		delete_node(2);
+        		sort_list();
+        		delete_node(10);
+        		delete_node(5);
+            	break;
+        	case 1:
+		    	add_node(11);
+            	add_node(1);
+            	delete_node(11);
+            	add_node(8);
+            	print_list();
+				break;
+   	    	case 2:
+				add_node(30);
                 add_node(25);
                 add_node(100);
                 sort_list();
                 print_list();
                 delete_node(100);
-} 
+                break;
+            default:
+				printf("Invalid number\n");    
+                 }
 }
 
 int main(int argc, char *argv[], char** environ) {
@@ -190,29 +228,32 @@ int main(int argc, char *argv[], char** environ) {
    //delete();
 
 
-   // WORKS WELL
-   //add_last(8);
-   //add_last(1);
-   //add_last(5);
-   //add_last(2);
-   //add_last(7);
-   //print();
-   //delete_node(5);
-   //print();
-   //sort_list();
-   //print();
-   //delete();
-   //print();
 
-   printf("The id of the main thread is %d\n",pthread_self());
+
+   // WORKS WELL
+   //add_node(8);
+   //add_node(1);
+   //add_node(5);
+   //add_node(2);
+   //add_node(7);
+   //print_list();
+   //delete_node(5);
+   //print_list();
+   //sort_list();
+   //print_list();
+   //flush_list();
+   //print_list();
+
+   printf("The id of the main thread is %ld\n", syscall(SYS_gettid));
 
    pthread_t threads[3];
    int i;
    pthread_barrier_init(&barrier, NULL, 3);
-
+   
+   int v[] = {0,1,2};
    for(i=0;i<3;i++)
 {
-	   pthread_create(&threads[i], NULL, sinc, (void*)v);
+	   pthread_create(&threads[i], NULL, sinc, &v[i] );
 }
 
   
@@ -227,6 +268,8 @@ pthread_barrier_destroy(&barrier);
 
    print_list();
    flush_list();
+   
 
+ 
 	return 0;
 }
