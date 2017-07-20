@@ -5,7 +5,7 @@
 #define _XOPEN_SOURCE 600
 
 pthread_barrier_t barrier;
-
+pthread_mutex_t mutex;
 struct list{
 	int val;
 	struct list * next;
@@ -19,12 +19,6 @@ void print_node(int val)
 	printf("%d ",val);
 }
 
-void add_first(int data){
-	 struct list *nod =(struct list*) malloc(sizeof(struct list));
-     nod->val=data;
-	 nod->next=head; 
-	 head=nod;
-}
 
 // add a node at the end of the list
 void add_node(int data)
@@ -34,7 +28,8 @@ void add_node(int data)
    node->val = data;
    node->next = NULL;
    node->pf = &print_node;
-   	
+
+	pthread_mutex_lock(&mutex);   	
    // if the list is empty
    if(head == NULL)  
    {  
@@ -48,13 +43,15 @@ void add_node(int data)
 		   } 
 		   temp->next=node;
         } 
+    pthread_mutex_unlock(&mutex);
 } 
          
                
 void print_list()
 {    
     printf("PRINT LIST %ld\n",pthread_self() );
-
+	
+	pthread_mutex_lock(&mutex);
 	struct list* temp = head;
 	if(head!=NULL) {
 	        while(temp != NULL) { 
@@ -65,27 +62,32 @@ void print_list()
 	        printf("\n");   
 			      }
 	else 
-	        printf("Nothing to show. The list is empty!\n");			            
+	        printf("Nothing to show. The list is empty!\n");
+	pthread_mutex_unlock(&mutex);			            
 }
 
 
 void flush_list()
 {     
     printf("FLUSH LIST %ld\n",pthread_self() );
-
+    
+	pthread_mutex_lock(&mutex);
     while(head!=NULL) { 
 	        struct list *temp;
 	        temp=head;
 	        head=head->next;
 	        free(temp);
-	                  }  
+	                  }
+					    
+	pthread_mutex_unlock(&mutex);
 }
 	
 	
 void delete_node(int valoare)
 {  
     printf("DELETE NODE %ld\n",pthread_self() );
-
+	
+	pthread_mutex_lock(&mutex);
     if(head == NULL) 
 	         printf("List is empty, we have nothing to erase!");
 	else 
@@ -110,7 +112,8 @@ void delete_node(int valoare)
 	else 
 	         printf("this specific element is not in this list!\n");					                                                 
 	         	                                                            
-}	
+}
+	pthread_mutex_unlock(&mutex);	
 }
 
 
@@ -118,7 +121,8 @@ void sort_list()
 {  
 
    printf("SORT LIST %ld\n",pthread_self() );
-
+	
+	pthread_mutex_lock(&mutex);
    struct list *p= head;
    struct list *c= p->next;
    
@@ -138,6 +142,7 @@ void sort_list()
 	      c=c->next;								 
 } 
 }
+	pthread_mutex_unlock(&mutex);
 }
 
 
@@ -240,8 +245,9 @@ pthread_barrier_destroy(&barrier);
 
    print_list();
    flush_list();
-   
+   //printf("The end of the program");
 
  
 	return 0;
-}
+} 
+
