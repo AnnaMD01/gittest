@@ -21,12 +21,12 @@ int main()
 		{
 			while(1) // a server should always listen
 			{	
-			mq_receive(server, buffer_receive_server, SIZE, NULL);
-			client = mq_open(buffer_receive_server, O_WRONLY);
-			sprintf(buffer_send_to_client,"%ld",tokenNumber);
-			mq_send(client, buffer_send_to_client, strlen(buffer_send_to_client), 0);
-			//mq_close(client);
-			tokenNumber++;
+				mq_receive(server, buffer_receive_server, SIZE, NULL);
+				client = mq_open(buffer_receive_server, O_WRONLY);
+				sprintf(buffer_send_to_client,"%ld",tokenNumber);
+				mq_send(client, buffer_send_to_client, strlen(buffer_send_to_client), 0);
+				//mq_close(client);
+				tokenNumber++;
 			}
 		}
 	
