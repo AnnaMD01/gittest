@@ -17,7 +17,7 @@ int main()
 
 	
 	
-	if((server = mq_open(MESSAGE_QUEUE_SERVER_NAME,	O_CREAT	|	O_RDWR, 0666, NULL)) != -1);
+	if((server = mq_open(MESSAGE_QUEUE_SERVER_NAME,	O_CREAT	| O_RDWR, 0666, NULL)) != -1);
 		{
 			while(1) // a server should always listen
 			{	
