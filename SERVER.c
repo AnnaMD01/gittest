@@ -21,10 +21,10 @@ int main()
 
 	struct mq_attr attr;
 
-    attr.mq_flags = 0;
-    attr.mq_maxmsg = MG_MAXMSG;
-    attr.mq_msgsize = MG_MSGSIZE;
-    attr.mq_curmsgs = 0;
+	attr.mq_flags = 0;
+	attr.mq_maxmsg = MG_MAXMSG;
+	attr.mq_msgsize = MG_MSGSIZE;
+	attr.mq_curmsgs = 0;
 
 	printf("Server is waiting for messages...\n");
 
@@ -61,8 +61,7 @@ int main()
 
 		tokenNumber++;
 	}
-		
-
+	
 	return 0;
 
 }

@@ -23,10 +23,10 @@ int main()
 	
 	struct mq_attr attr;
 
-    attr.mq_flags = 0;
-    attr.mq_maxmsg = MG_MAXMSG;
-    attr.mq_msgsize = MG_MSGSIZE;
-    attr.mq_curmsgs = 0;
+	attr.mq_flags = 0;
+	attr.mq_maxmsg = MG_MAXMSG;
+	attr.mq_msgsize = MG_MSGSIZE;
+	attr.mq_curmsgs = 0;
 	
 	if((client = mq_open(queue_client_name, O_CREAT	| O_RDWR, 0666, &attr)) == -1)
 	{
@@ -58,6 +58,5 @@ int main()
 		mq_close(client);
 		mq_unlink(queue_client_name);
 	
-
-	 return 0;
+	return 0;
 }
