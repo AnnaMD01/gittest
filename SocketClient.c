@@ -4,9 +4,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <unistd.h>
+#include <unistd.h> // for close
 
-#define PORT 3007
+#define PORT 3011
 
 int main(int argc, char* argv[])
  {

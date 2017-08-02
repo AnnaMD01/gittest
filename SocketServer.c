@@ -4,7 +4,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <unistd.h>
+#include <unistd.h> // for close
 
 int main(int argc, char* argv[])
 {	
@@ -15,10 +15,12 @@ int main(int argc, char* argv[])
 	}
 	else
 	{
-		printf("Please choose a port number!");
+		printf("Please choose a port number (grather than 2000)!");
 		exit(0);
 	}	
 
+
+	fd_set readFds,writeFds;
 	int socketid, clientSocket;
 	struct sockaddr_in server, client;
 	socklen_t clientAddressLength;
@@ -52,94 +54,78 @@ int main(int argc, char* argv[])
 	}	
 
 	printf("Server are waiting for clients...\n");
-	// poate ceva de la while: accept(): bad file descriptor
+	
+	int maxFd,i;
 	while(1)
 	{
-		// bad file descriptor, clientSocket se suprascrie
-		clientSocket =  accept(socketid, (struct sockaddr*)&client, (socklen_t*)&clientAddressLength );
-		if(clientSocket == -1)
+		FD_ZERO(&readFds);
+		FD_ZERO(&writeFds);
+		FD_SET(socketid,&readFds);
+		maxFd = socketid;
+
+		if(select(maxFd + 1, &readFds, NULL, NULL, NULL) == -1)
 		{
-			perror("server: accept() system call");
+			perror("server: select()");
 			exit(0);
 		}
-		printf("Message accepted!\n");
 
-		
-		if((recv(clientSocket, &receiveFromClient, sizeof(receiveFromClient),0)) == -1)
+		for( i=0;i<= maxFd; i++)
 		{
-			perror("server: recv() system call");
-			exit(0);
+			
+			if(FD_ISSET(i, &readFds))
+			{
+				if( i == socketid)
+				{	
+					clientAddressLength = sizeof(client);
+					clientSocket =  accept(socketid, (struct sockaddr*)&client, (socklen_t*)&clientAddressLength );
+					if(clientSocket == -1)
+					{
+						perror("server: accept() system call");
+						exit(0);
+					}
+					//printf("Message accepted!\n");
+					else 
+					{
+						FD_SET(clientSocket, &readFds);
+						if(clientSocket > maxFd)
+						{
+							maxFd = clientSocket;
+						}
+					}
+				}
+				else 
+				{
+					if((recv(clientSocket, &receiveFromClient, sizeof(receiveFromClient),0)) == -1)
+					{
+						perror("server: recv() system call");
+						exit(0);
 
-		}
-		printf("Message received!\n");
-		printf("The message from the client is: %s\n",receiveFromClient);
-		char m[] = "Hello from the server!";
+					}
+					printf("Message received!\n");
+					printf("The message from the client is: %s\n",receiveFromClient);
+					char m[] = "Hello from the server!";
 		
-		if(send(clientSocket, &m , sizeof(m), 0) == -1)
-		{
-			perror("server: send() system call");
-		}
-		printf("Server send back a message!\n");
+					if(send(clientSocket, &m , sizeof(m), 0) == -1)
+					{
+						perror("server: send() system call");
+						exit(0);
+					}
+					printf("Server send back a message!\n");
 
+				}
+			}
+
+			
+			
 		
-		if(close(clientSocket) == -1)
-		{
-			perror("server: close() client system call");
-			exit(0);
 		}
-		if(close(socketid) == -1)
-		{
-			perror("server: close() server system call");
-		}
-		
+	}
 	
-	}
-	/*printf("Waiting for a connection...\n");
-	for(;;) {
-    int done, n;
-    char m[] = "Hello from the server!";
-        
-        
-    if ((clientSocket = accept(socketid, (struct sockaddr *)&client, &clientAddressLength)) == -1) 
-    {
-        perror("accept");
-        exit(1);
-    }
-
-    printf("Server accept a client.\n");
-
-    done = 0;
-    do 
-    {
-        n = recv(clientSocket, receiveFromClient, sizeof(receiveFromClient), 0);
-        if (n <= 0) 
-        {
-            if (n < 0) perror("recv");
-                done = 1;
-        }
-        printf("Server received a message!\n");
-        printf("The message is: %s\n", receiveFromClient);
-
-        if (!done) 
-        {
-        	if (send(clientSocket, m, strlen(m), 0) < 0) 
-                {
-                    perror("send");
-                    done = 1;
-                	}
-                	printf("server send a message back to the client!\n");
-            	}
-
-        } while (!done);
-
-        close(clientSocket);
-    }*/
-
-	close(clientSocket);
 	if(close(socketid) == -1)
-	{
-		perror("server: close() server system call");
-	}
+			{
+				perror("server: close2() server system call");
+				exit(0);
+			}
 		
 
 
