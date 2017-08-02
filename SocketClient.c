@@ -6,12 +6,12 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
-#define PORT 2017
+#define PORT 3007
 
 int main(int argc, char* argv[])
  {
  	//numele fisierului este primit ca parametru
-	char numeFisier[20];
+	char numeFisier[10];
 	char server_reply[100];
 	if(argc > 1)
 	{
@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
 
 	int clientid;
 
-	if((clientid = socket(PF_UNIX, SOCK_STREAM, 0)) == -1)
+	if((clientid = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 	{
 		perror("client: socket() system call");
 		exit(0);
@@ -42,17 +42,21 @@ int main(int argc, char* argv[])
 		perror("client: connect() system call");
 		exit(0);
 	}
-	if((send( clientid, numeFisier, strlen(numeFisier),0)) == -1)
+	printf("Client is connecting to the server\n");
+	if((send( clientid, &numeFisier, sizeof(numeFisier),0)) == -1)
 	{
 		perror("client: send() ssytem call");
 		exit(0);
 	}
-
-	if( recv(clientid, server_reply, strlen(server_reply),0 ) == -1)
+	printf("client send a message to the server\n");
+	if( recv(clientid, &server_reply, sizeof(server_reply),0 ) == -1)
 	{
 		perror("client: recv() system call");
 		exit(0);
 	}
+	server_reply[100] = '\0';
+	printf("client received a message from the server\n");
+	printf("The message is: %s\n", server_reply);
 
 	if(close(clientid) == -1)
 	{
