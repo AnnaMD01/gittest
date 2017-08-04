@@ -13,6 +13,7 @@ int main(int argc, char* argv[])
  	//numele fisierului este primit ca parametru
 	char numeFisier[10];
 	char server_reply[100];
+	FILE *fd;
 	if(argc > 1)
 	{
 		strcpy(numeFisier, argv[1]);
@@ -48,16 +49,44 @@ int main(int argc, char* argv[])
 		perror("client: send() ssytem call");
 		exit(0);
 	}
-	printf("client send a message to the server\n");
-	if( recv(clientid, &server_reply, sizeof(server_reply),0 ) == -1)
+	printf("client send the name of the file to the server\n");
+
+	int file_size;
+	if(recv(clientid, &server_reply, BUFSIZ, 0) == -1)
 	{
-		perror("client: recv() system call");
+		perror("client recv() file_size");
 		exit(0);
 	}
-	server_reply[100] = '\0';
-	printf("client received a message from the server\n");
-	printf("The message is: %s\n", server_reply);
+	file_size = atoi(server_reply);
+	printf("Client receive the size of the file: %d\n", file_size);
+	fd = fopen("ClientFile","w");
+	if( fd == NULL)
+	{
+		perror("client fopen");
+		exit(0);
+	}
+	printf("Client open ClientFile\n");
 
+	int remain_data = file_size;
+	int length = 0;
+	printf("remain_data: %d length: %d\n", remain_data, length);
+	printf("Client are going to write the data into the file...\n");
+	//daca server nu intra in while e posibil ca clientul sa aiba infinte loop
+	while( (length = recv(clientid, &server_reply, BUFSIZ,0)) >0 && (remain_data > 0))
+	{
+		remain_data -= length;
+		printf("The client are writing the data\nRemain data:%d", remain_data);
+
+	}
+
+	printf("After the while\n");
+	printf("remain_data: %d length: %d\n", remain_data, length);
+	if(remain_data == 0 && length >0)
+		printf("Client receive the file from the server!\n");
+	else
+		printf("client: Something went wrong!\n");
+
+	fclose(fd);
 	if(close(clientid) == -1)
 	{
 		perror("client: close() system call");

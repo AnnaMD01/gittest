@@ -5,6 +5,9 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h> // for close
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/sendfile.h>
 
 int main(int argc, char* argv[])
 {	
@@ -102,15 +105,75 @@ int main(int argc, char* argv[])
 
 					}
 					printf("Message received!\n");
-					printf("The message from the client is: %s\n",receiveFromClient);
-					char m[] = "Hello from the server!";
-		
-					if(send(clientSocket, &m , sizeof(m), 0) == -1)
+					printf("The client request for the file: %s\n",receiveFromClient);
+					char f1[] = "file1";
+					char f2[] = "file2";
+					char f3[] = "file3";
+					char f4[] = "file4";
+					char f5[] = "file5";
+
+					if( (strcmp (receiveFromClient, f1) == 0) || (strcmp (receiveFromClient, f2) == 0) || (strcmp (receiveFromClient, f3) == 0) || (strcmp (receiveFromClient, f4) == 0) || (strcmp (receiveFromClient, f5) == 0))
 					{
-						perror("server: send() system call");
-						exit(0);
+						printf("The file is available!\nThe client request the file: %s\n",receiveFromClient);
+						struct stat file_stat;
+
+						int fd = open(receiveFromClient,O_RDONLY);
+						if ( fd < 0)
+						{
+							perror("open()");
+							exit(0);
+						}
+						if (fstat(fd, &file_stat)<0)
+						{
+							perror("fstat");
+							exit(0);
+						}
+						char file_size[256];
+						sprintf(file_size, "%ld", file_stat.st_size);
+						printf("The file size is: %s\n", file_size);
+						if(send(clientSocket, file_size, sizeof(file_size),0) == -1)
+						{
+							perror("server send() the size of the file");
+							exit(0);
+
+						}
+						printf("Server send the size of the file:%s\n",file_size);
+						int offset = 0;
+						int remain_data = file_stat.st_size;
+						int sb = 0;
+						//printf("offset: %d remain_data: %d sb: %d\n", offset, remain_data,sb);
+						printf("Server are going to send the data...\n");
+						// server nu intra in while
+						// pentru ca sb = 0;
+						sb = sendfile(clientSocket,fd, (off_t*)&offset, BUFSIZ);
+						printf("sb: %d\n", sb);
+						//remain_data -=sb;
+						//printf("remain_data: %d\n", remain_data);
+						while( ((sb = sendfile(clientSocket,fd, (off_t*)&offset, BUFSIZ)) > 0) && (remain_data > 0))
+						{
+							remain_data -=sb;
+							printf("Server are sending the data...\nRemain data:%d", remain_data);
+						}
+						//printf("After the while\n");
+						//printf("offset: %d remain_data: %d sb: %d\n", offset, remain_data,sb);
+						if(sb < 0)
+							printf("Somwthing went wrong! The file was not transmited!");
+						if(remain_data == 0) 
+							printf("Server send the file %s succesfully!", receiveFromClient);
+						
+
 					}
-					printf("Server send back a message!\n");
+					else 
+					{
+						if(send(clientSocket, "FILE NOT FOUND", sizeof("FILE NOT FOUND"),0) == -1)
+						{
+							perror("server send() FILE NOT FOUND");
+							exit(0);
+						}
+
+					}
+
+					
 
 				}
 			}
