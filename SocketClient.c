@@ -6,13 +6,14 @@
 #include <netinet/in.h>
 #include <unistd.h> // for close
 
-#define PORT 3011
+#define PORT 3015
 
 int main(int argc, char* argv[])
  {
  	//numele fisierului este primit ca parametru
 	char numeFisier[10];
 	char server_reply[100];
+	char buffer[256];
 	FILE *fd;
 	if(argc > 1)
 	{
@@ -57,41 +58,55 @@ int main(int argc, char* argv[])
 		perror("client recv() file_size");
 		exit(0);
 	}
-	file_size = atoi(server_reply);
-	printf("Client receive the size of the file: %d\n", file_size);
-	fd = fopen("ClientFile","w");
-	if( fd == NULL)
+
+	if(strcmp(server_reply,"FILE NOT FOUND") == 0)
 	{
-		perror("client fopen");
-		exit(0);
+		//sa pun o eticheta goto
+		printf("FILE NOT FOUND!\n");
 	}
-	printf("Client open ClientFile\n");
-
-	int remain_data = file_size;
-	int length = 0;
-	printf("remain_data: %d length: %d\n", remain_data, length);
-	printf("Client are going to write the data into the file...\n");
-	//daca server nu intra in while e posibil ca clientul sa aiba infinte loop
-	while( (length = recv(clientid, &server_reply, BUFSIZ,0)) >0 && (remain_data > 0))
-	{
-		remain_data -= length;
-		printf("The client are writing the data\nRemain data:%d", remain_data);
-
-	}
-
-	printf("After the while\n");
-	printf("remain_data: %d length: %d\n", remain_data, length);
-	if(remain_data == 0 && length >0)
-		printf("Client receive the file from the server!\n");
 	else
-		printf("client: Something went wrong!\n");
+	{
+		file_size = atoi(server_reply);
+		printf("Client receive the size of the file: %d\n", file_size);
+		fd = fopen("ClientFile","w");
+		if( fd == NULL)
+		{
+			perror("client fopen");
+			exit(0);
+		}
+		printf("Client open ClientFile\n");
 
-	fclose(fd);
+		int remain_data = file_size;
+		int length = 0;
+		printf("remain_data: %d length: %d\n", remain_data, length);
+		printf("Client are going to write the data into the file...\n");
+		//daca server nu intra in while e posibil ca clientul sa aiba infinte loop
+		while( (length = recv(clientid, buffer,file_size,0)) > 0 && (remain_data > 0))
+		{
+			fwrite(buffer, sizeof(char),length, fd);
+			printf("buffer:%s",buffer);
+			remain_data -= length;
+			printf("The client are writing the data\nRemain data:%d\n", remain_data);
+
+		}
+		fclose(fd);
+
+		printf("After the while\n");
+		printf("remain_data: %d length: %d\n", remain_data, length);
+		if(remain_data == 0 && length == file_size)
+			printf("Client receive the file from the server!\n");
+		else
+			printf("client: Something went wrong!\n");
+
+		}
+
+	
 	if(close(clientid) == -1)
 	{
 		perror("client: close() system call");
 		exit(0);
 	}
+	printf("The end of the program!\n");
 	return 0;
  }
 	
