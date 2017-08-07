@@ -4,21 +4,21 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <unistd.h> // for close
+#include <unistd.h> 
 
 #define PORT 3015
 
 int main(int argc, char* argv[])
  {
- 	//numele fisierului este primit ca parametru
+ 	
 	char numeFisier[10];
-	char server_reply[100];
-	char buffer[256];
+	char server_reply[256];
+	
 	FILE *fd;
 	if(argc > 1)
 	{
 		strcpy(numeFisier, argv[1]);
-		//printf("Numele fisierului trimis ca parametru este: %s\n",numeFisier);
+		
 	}
 	else 
 	{
@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
 		exit(0);
 	}
 
-	// connect to the server
+	
 	struct sockaddr_in server;
 	server.sin_family = AF_INET;
 	server.sin_port = htons(PORT);
@@ -80,8 +80,9 @@ int main(int argc, char* argv[])
 		int length = 0;
 		printf("remain_data: %d length: %d\n", remain_data, length);
 		printf("Client are going to write the data into the file...\n");
-		//daca server nu intra in while e posibil ca clientul sa aiba infinte loop
-		while( (length = recv(clientid, buffer,file_size,0)) > 0 && (remain_data > 0))
+		
+		char buffer[file_size];
+		while( (length = recv(clientid, buffer, sizeof(buffer),0)) > 0 && (remain_data > 0))
 		{
 			fwrite(buffer, sizeof(char),length, fd);
 			printf("buffer:%s",buffer);
