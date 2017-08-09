@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
  {
  	
 	char numeFisier[10];
-	char server_reply[256];
+	char server_reply[14];
 	
 	FILE *fd;
 	if(argc > 1)
@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
 		exit(0);
 	}
 	printf("Client is connecting to the server\n");
-	if((send( clientid, &numeFisier, sizeof(numeFisier),0)) == -1)
+	if((send(clientid, numeFisier, sizeof(numeFisier), 0)) == -1)
 	{
 		perror("client: send() ssytem call");
 		exit(0);
@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
 	printf("client send the name of the file to the server\n");
 
 	int file_size;
-	if(recv(clientid, &server_reply, BUFSIZ, 0) == -1)
+	if(recv(clientid, server_reply, sizeof(server_reply), 0) == -1)
 	{
 		perror("client recv() file_size");
 		exit(0);
@@ -79,15 +79,15 @@ int main(int argc, char* argv[])
 		int remain_data = file_size;
 		int length = 0;
 		printf("remain_data: %d length: %d\n", remain_data, length);
-		printf("Client are going to write the data into the file...\n");
+		printf("Client is going to write the data into the file...\n");
 		
 		char buffer[file_size];
-		while( (length = recv(clientid, buffer, sizeof(buffer),0)) > 0 && (remain_data > 0))
+		while( ((length = recv(clientid, buffer, sizeof(buffer), 0)) > 0) && (remain_data > 0))
 		{
+			printf("buffer: %s", buffer);
 			fwrite(buffer, sizeof(char),length, fd);
-			printf("buffer:%s",buffer);
 			remain_data -= length;
-			printf("The client are writing the data\nRemain data:%d\n", remain_data);
+			printf("The client is writing the data\nRemain data:%d\n", remain_data);
 
 		}
 		fclose(fd);

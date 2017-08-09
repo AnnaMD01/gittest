@@ -56,7 +56,7 @@ int main(int argc, char* argv[])
 		exit(0);
 	}	
 
-	printf("Server are waiting for clients...\n");
+	printf("Server is waiting for clients...\n");
 	
 	int maxFd,i;
 	while(1)
@@ -127,17 +127,16 @@ int main(int argc, char* argv[])
 						}
 						
 						fseek(fd1, 0, SEEK_END);
-						long fsize = ftell(fd1);
-						char b[256];
-						sprintf(b,"%ld",fsize);
+						int fsize = ftell(fd1);
+						char b[14];
+						sprintf(b,"%d",fsize);
 						
 						rewind(fd1);
 						
-						if(send(clientSocket, (const void*)b, sizeof(b),0) == -1)
+						if(send(clientSocket, b, sizeof(b), 0) == -1)
 						{
 							perror("server send() the size of the file");
 							exit(0);
-						
 						}
 						char buffer[fsize];
 						int result = fread( buffer, fsize, 1, fd1);
@@ -147,11 +146,10 @@ int main(int argc, char* argv[])
 						int remain_data = fsize;
 						int sb = 0;
 						
-						
-						while((sb = send(clientSocket, buffer, sizeof(buffer), 0) > 0 ) && (remain_data > 0))
+						while ( ((sb = send(clientSocket, buffer, sizeof(buffer), 0)) > 0) && (remain_data > 0))
 						{
 							remain_data -=sb;
-							printf("Server are sending the data...\nRemain data:%d\n", remain_data);
+							printf("Server is sending the data...\nRemain data:%d\n", remain_data);
 						}
 						
 								
